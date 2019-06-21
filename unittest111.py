@@ -17,5 +17,8 @@ class Test(unittest.TestCase):
 	def test2(self):
 		print('test2')
 
+	def test3(self):
+		print('test3')
+
 if __name__ == '__main__':
 	unittest.main()
