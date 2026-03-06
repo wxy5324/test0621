@@ -41,7 +41,7 @@ public class BinaryInsertionSort {
     }
 
     public static void main(String[] args) {
-        int[] arr = {64, 34, 25, 12, 22, 11, 90, 5};
+        int[] arr = {64, 34, 25, 12, 22, 11, 90, 95, 5};
         
         System.out.println("排序前: ");
         printArray(arr);
