@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL 加解密</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+SC:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0f0f12;
+            --surface: #1a1a20;
+            --sidebar-bg: #141418;
+            --border: #2d2d35;
+            --accent: #6366f1;
+            --accent-hover: #818cf8;
+            --text: #e4e4e7;
+            --text-muted: #a1a1aa;
+            --success: #22c55e;
+            --error: #ef4444;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Noto Sans SC', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+        .sidebar-bg { background: var(--sidebar-bg); }
+        .sidebar { width: 240px; min-height: 100vh; border-right: 1px solid var(--border); padding: 1.5rem 0; }
+        .sidebar-title { padding: 0 1.25rem 1rem; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+        .nav-item { display: block; padding: 0.75rem 1.25rem; color: var(--text-muted); text-decoration: none; font-size: 0.95rem; transition: color 0.2s, background 0.2s; border-left: 3px solid transparent; }
+        .nav-item:hover { color: var(--text); background: rgba(99, 102, 241, 0.08); }
+        .nav-item.active { color: var(--accent); background: rgba(99, 102, 241, 0.12); border-left-color: var(--accent); }
+
+        .page-layout { display: flex; min-height: 100vh; }
+        .page-content { flex: 1; padding: 2rem 2.5rem; background-image: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99, 102, 241, 0.08), transparent); }
+
+        .page-title { font-size: 1.5rem; margin-bottom: 1.5rem; font-weight: 600; }
+
+        .tool-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            max-width: 640px;
+        }
+
+        .form-group { margin-bottom: 1.25rem; }
+        .form-group label { display: block; font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.5rem; }
+
+        .url-input {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.95rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .url-input:focus { outline: none; border-color: var(--accent); }
+        .url-input::placeholder { color: var(--text-muted); opacity: 0.7; }
+
+        .btn-row { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; flex-wrap: nowrap; }
+        .btn {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            font-weight: 500;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-family: inherit;
+        }
+        .btn-encrypt { background: var(--accent); color: white; }
+        .btn-encrypt:hover { background: var(--accent-hover); }
+        .btn-decrypt { background: var(--border); color: var(--text); }
+        .btn-decrypt:hover { background: #3d3d47; }
+
+        .output-wrap { margin-top: 1rem; }
+        .output-label { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem; }
+        .output-value {
+            padding: 1rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            color: var(--success);
+            word-break: break-all;
+            min-height: 60px;
+        }
+
+        .output-value.empty { color: var(--text-muted); }
+        .error-msg { font-size: 0.875rem; color: var(--error); margin-top: 0.5rem; }
+    </style>
+</head>
+<body>
+    <div class="page-layout">
+        <aside class="sidebar sidebar-bg">
+            <div class="sidebar-title">导航</div>
+            <a href="/" class="nav-item" data-path="/">家有学霸问题查询</a>
+            <a href="/online-issue-query" class="nav-item" data-path="/online-issue-query">线上问题查询</a>
+            <a href="/binary-sort" class="nav-item" data-path="/binary-sort">二分法排序</a>
+            <a href="/url-encrypt-decrypt" class="nav-item active" data-path="/url-encrypt-decrypt">URL 加解密</a>
+            <a href="/timestamp-convert" class="nav-item" data-path="/timestamp-convert">时间戳转换</a>
+            <a href="/json-parse" class="nav-item" data-path="/json-parse">JSON 在线解析</a>
+            <a href="/data-process" class="nav-item" data-path="/data-process">数据处理</a>
+            <a href="/mobile-cipher" class="nav-item" data-path="/mobile-cipher">手机号加解密</a>
+        </aside>
+        <script>
+            (function() {
+                var path = location.pathname.replace(/\/$/, '') || '/';
+                document.querySelectorAll('.nav-item').forEach(function(a) {
+                    var p = a.getAttribute('data-path');
+                    a.classList.toggle('active', (p === '/' && (path === '/' || path === '/issue-query')) || (p === path));
+                });
+            })();
+        </script>
+        <main class="page-content">
+            <h1 class="page-title">URL 加解密</h1>
+            <div class="tool-card">
+                <div class="form-group">
+                    <label for="url-input">输入 URL</label>
+                    <textarea id="url-input" class="url-input" placeholder="例如：https://example.com/path?key=value"></textarea>
+                </div>
+                <div class="btn-row">
+                    <button type="button" class="btn btn-encrypt" id="btn-base64-encode">Base64 Encode</button>
+                    <button type="button" class="btn btn-decrypt" id="btn-base64-decode">Base64 Decode</button>
+                    <button type="button" class="btn btn-encrypt" id="btn-url-encode">Url Encode (utf-8)</button>
+                    <button type="button" class="btn btn-decrypt" id="btn-url-decode">Url Decode (utf-8)</button>
+                </div>
+                <div class="output-wrap">
+                    <div class="output-label">输出</div>
+                    <div id="output" class="output-value empty">点击按钮后显示结果</div>
+                    <div id="error-msg" class="error-msg" style="display:none;"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        (function() {
+            // Base64 编码（支持 Unicode）
+            function base64Encode(str) {
+                return btoa(unescape(encodeURIComponent(str)));
+            }
+
+            // Base64 解码
+            function base64Decode(str) {
+                return decodeURIComponent(escape(atob(str)));
+            }
+
+            // Url Encode(UTF-8)
+            function urlEncode(str) {
+                return encodeURIComponent(str);
+            }
+
+            // Url Decode (UTF-8)
+            function urlDecode(str) {
+                return decodeURIComponent(str.replace(/\+/g, ' '));
+            }
+
+            var urlInput = document.getElementById('url-input');
+            var output = document.getElementById('output');
+            var errorMsg = document.getElementById('error-msg');
+
+            function showResult(text) {
+                errorMsg.style.display = 'none';
+                output.textContent = text || '';
+                output.classList.toggle('empty', !text);
+            }
+
+            function showError(msg) {
+                errorMsg.textContent = msg;
+                errorMsg.style.display = 'block';
+                output.classList.add('empty');
+            }
+
+            document.getElementById('btn-base64-encode').addEventListener('click', function() {
+                var val = urlInput.value;
+                if (!val) {
+                    showError('请输入内容');
+                    return;
+                }
+                try {
+                    showResult(base64Encode(val));
+                } catch (e) {
+                    showError('Base64 编码失败: ' + e.message);
+                }
+            });
+
+            document.getElementById('btn-base64-decode').addEventListener('click', function() {
+                var val = urlInput.value.trim();
+                if (!val) {
+                    showError('请输入待解码内容');
+                    return;
+                }
+                try {
+                    showResult(base64Decode(val));
+                } catch (e) {
+                    showError('Base64 解码失败，请确认输入为有效的 Base64 编码: ' + e.message);
+                }
+            });
+
+            document.getElementById('btn-url-encode').addEventListener('click', function() {
+                var val = urlInput.value;
+                if (!val) {
+                    showError('请输入内容');
+                    return;
+                }
+                try {
+                    showResult(urlEncode(val));
+                } catch (e) {
+                    showError('Url 编码失败: ' + e.message);
+                }
+            });
+
+            document.getElementById('btn-url-decode').addEventListener('click', function() {
+                var val = urlInput.value;
+                if (!val) {
+                    showError('请输入待解码内容');
+                    return;
+                }
+                try {
+                    showResult(urlDecode(val));
+                } catch (e) {
+                    showError('Url 解码失败，请确认输入为有效的URL 编码: ' + e.message);
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

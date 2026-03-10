@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据处理</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+SC:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0f0f12;
+            --surface: #1a1a20;
+            --sidebar-bg: #141418;
+            --border: #2d2d35;
+            --accent: #6366f1;
+            --accent-hover: #818cf8;
+            --text: #e4e4e7;
+            --text-muted: #a1a1aa;
+            --success: #22c55e;
+            --error: #ef4444;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Noto Sans SC', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+        .sidebar-bg { background: var(--sidebar-bg); }
+        .sidebar { width: 240px; min-height: 100vh; border-right: 1px solid var(--border); padding: 1.5rem 0; }
+        .sidebar-title { padding: 0 1.25rem 1rem; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+        .nav-item { display: block; padding: 0.75rem 1.25rem; color: var(--text-muted); text-decoration: none; font-size: 0.95rem; transition: color 0.2s, background 0.2s; border-left: 3px solid transparent; }
+        .nav-item:hover { color: var(--text); background: rgba(99, 102, 241, 0.08); }
+        .nav-item.active { color: var(--accent); background: rgba(99, 102, 241, 0.12); border-left-color: var(--accent); }
+
+        .page-layout { display: flex; min-height: 100vh; }
+        .page-content { flex: 1; padding: 1.5rem 2rem; display: flex; flex-direction: column; background-image: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99, 102, 241, 0.08), transparent); }
+
+        .page-title { font-size: 1.5rem; margin-bottom: 1rem; font-weight: 600; }
+
+        .tool-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            max-width: 720px;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-title { font-size: 1rem; color: var(--accent); margin-bottom: 1rem; font-weight: 500; }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.5rem; }
+
+        .text-input, .textarea-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.95rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+        }
+        .textarea-input { min-height: 120px; resize: vertical; }
+        .text-input:focus, .textarea-input:focus { outline: none; border-color: var(--accent); }
+        .text-input::placeholder, .textarea-input::placeholder { color: var(--text-muted); opacity: 0.7; }
+
+        .form-row { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+        .btn { padding: 0.5rem 1.25rem; font-size: 0.9rem; font-weight: 500; background: var(--accent); color: white; border: none; border-radius: 8px; cursor: pointer; font-family: inherit; }
+        .btn:hover { background: var(--accent-hover); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .output-group { margin-top: 1rem; }
+        .output-label { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.4rem; }
+        .output-value {
+            padding: 0.75rem 1rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            color: var(--success);
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .output-value.empty { color: var(--text-muted); }
+        .error-msg { font-size: 0.875rem; color: var(--error); margin-top: 0.5rem; }
+    </style>
+</head>
+<body>
+    <div class="page-layout">
+        <aside class="sidebar sidebar-bg">
+            <div class="sidebar-title">导航</div>
+            <a href="/" class="nav-item" data-path="/">家有学霸问题查询</a>
+            <a href="/online-issue-query" class="nav-item" data-path="/online-issue-query">线上问题查询</a>
+            <a href="/binary-sort" class="nav-item" data-path="/binary-sort">二分法排序</a>
+            <a href="/url-encrypt-decrypt" class="nav-item" data-path="/url-encrypt-decrypt">URL 加解密</a>
+            <a href="/timestamp-convert" class="nav-item" data-path="/timestamp-convert">时间戳转换</a>
+            <a href="/json-parse" class="nav-item" data-path="/json-parse">JSON 在线解析</a>
+            <a href="/data-process" class="nav-item active" data-path="/data-process">数据处理</a>
+            <a href="/mobile-cipher" class="nav-item" data-path="/mobile-cipher">手机号加解密</a>
+        </aside>
+        <script>
+            (function() {
+                var path = location.pathname.replace(/\/$/, '') || '/';
+                document.querySelectorAll('.nav-item').forEach(function(a) {
+                    var p = a.getAttribute('data-path');
+                    a.classList.toggle('active', (p === '/' && (path === '/' || path === '/issue-query')) || (p === path));
+                });
+            })();
+        </script>
+        <main class="page-content">
+            <h1 class="page-title">数据处理</h1>
+
+            <div class="tool-card">
+                <div class="section-title">行转逗号格式</div>
+                <div class="form-group">
+                    <label for="lines-input">输入内容（每行一项）</label>
+                    <textarea id="lines-input" class="textarea-input" placeholder="a1
+a2
+a3"></textarea>
+                </div>
+                <div class="output-group">
+                    <div class="output-label">带引号输出</div>
+                    <pre id="output-quoted" class="output-value empty">点击转换后显示</pre>
+                </div>
+                <div class="output-group">
+                    <div class="output-label">不带引号输出</div>
+                    <pre id="output-unquoted" class="output-value empty">点击转换后显示</pre>
+                </div>
+                <button type="button" class="btn" id="btn-lines-convert">转换</button>
+            </div>
+
+            <div class="tool-card">
+                <div class="section-title">生成随机姓名和手机号</div>
+                <div class="form-group">
+                    <label for="n-input">输入数量 N（1-500）</label>
+                    <div class="form-row">
+                        <input type="number" id="n-input" class="text-input" placeholder="例如：10" min="1" max="500" style="max-width:140px;" />
+                        <button type="button" class="btn" id="btn-generate">生成</button>
+                    </div>
+                </div>
+                <div id="error-gen" class="error-msg" style="display:none;"></div>
+                <div class="output-group">
+                    <div class="output-label">输出</div>
+                    <pre id="output-contacts" class="output-value empty">输入 N 后点击生成</pre>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        (function() {
+            var API_BASE = window.location.origin;
+
+            // 功能1：行转逗号（纯前端）
+            var linesInput = document.getElementById('lines-input');
+            var outputQuoted = document.getElementById('output-quoted');
+            var outputUnquoted = document.getElementById('output-unquoted');
+
+            document.getElementById('btn-lines-convert').addEventListener('click', function() {
+                var lines = linesInput.value.split(/\r?\n/).map(function(s) { return s.trim(); }).filter(Boolean);
+                if (lines.length === 0) {
+                    outputQuoted.textContent = '';
+                    outputQuoted.classList.add('empty');
+                    outputUnquoted.textContent = '';
+                    outputUnquoted.classList.add('empty');
+                    return;
+                }
+                outputQuoted.textContent = lines.map(function(s) { return '"' + s + '"'; }).join(',');
+                outputQuoted.classList.remove('empty');
+                outputUnquoted.textContent = lines.join(',');
+                outputUnquoted.classList.remove('empty');
+            });
+
+            //功能2：生成随机姓名手机号（调用后端 API）
+            var nInput = document.getElementById('n-input');
+            var btnGenerate = document.getElementById('btn-generate');
+            var outputContacts = document.getElementById('output-contacts');
+            var errorGen = document.getElementById('error-gen');
+
+            btnGenerate.addEventListener('click', function() {
+                errorGen.style.display = 'none';
+                var n = parseInt(nInput.value, 10);
+                if (!n || n < 1 || n > 500) {
+                    errorGen.textContent = '请输入有效的 N（1-500）';
+                    errorGen.style.display = 'block';
+                    return;
+                }
+                btnGenerate.disabled = true;
+                outputContacts.textContent = '生成中...';
+                outputContacts.classList.remove('empty');
+
+                fetch(API_BASE + '/api/random-contacts?n=' + n)
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (data.error) {
+                            throw new Error(data.error);
+                        }
+                        var list = data.list || [];
+                        var lines = list.map(function(item) {
+                            return item.name + '\t' + item.phone;
+                        });
+                        outputContacts.textContent = lines.length > 0 ? lines.join('\n') : '无数据';
+                        outputContacts.classList.remove('empty');
+                    })
+                    .catch(function(e) {
+                        errorGen.textContent = '请求失败: ' + e.message;
+                        errorGen.style.display = 'block';
+                        outputContacts.textContent = '';
+                        outputContacts.classList.add('empty');
+                    })
+                    .finally(function() {
+                        btnGenerate.disabled = false;
+                    });
+            });
+        })();
+    </script>
+</body>
+</html>
