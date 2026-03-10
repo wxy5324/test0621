@@ -42,7 +42,7 @@ def load_html_contents():
             sys.exit(1)
         raw[filename] = data
 
-    # 路由映射
+    #  路由映射
     contents['/'] = raw['issue-query.html']
     contents['/index.html'] = raw['issue-query.html']
     contents['/issue-query'] = raw['issue-query.html']

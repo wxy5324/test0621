@@ -154,7 +154,7 @@
                 return decodeURIComponent(escape(atob(str)));
             }
 
-            // Url Encode (UTF-8)
+            // Url Encode(UTF-8)
             function urlEncode(str) {
                 return encodeURIComponent(str);
             }
@@ -228,7 +228,7 @@
                 try {
                     showResult(urlDecode(val));
                 } catch (e) {
-                    showError('Url 解码失败，请确认输入为有效的 URL 编码: ' + e.message);
+                    showError('Url 解码失败，请确认输入为有效的URL 编码: ' + e.message);
                 }
             });
         })();

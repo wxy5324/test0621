@@ -352,7 +352,7 @@ class MobileCipher:
 def generate_and_encrypt_mobiles(initial_mobile: str, count: int, secret_key: str = None) -> dict:
     """
     根据初始手机号和数量，生成连续手机号并加密
-    :param initial_mobile: 初始手机号，如 "13800138201"
+    :param initial_mobile: 初始手机号如 "13800138201"
     :param count: 数量
     :param secret_key: 16字符密钥，默认从环境变量 MOBILE_CIPHER_KEY 读取
     :return: {"mobiles": [...], "encrypted": [...]} 或 {"error": "..."}

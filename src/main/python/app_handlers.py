@@ -137,7 +137,7 @@ def create_handler(html_contents: dict):
                 self._json_response(data)
                 return
 
-            # 静态页面路由
+            #  静态页面路由
             content = html_contents.get(path)
             if content is None and (path == '/binary-sort' or path.startswith('/binary-sort/')):
                 content = html_contents.get('*binary-sort')

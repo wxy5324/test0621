@@ -44,7 +44,7 @@ def generate_random_contacts(n: int) -> List[Dict[str, Any]]:
         given = ''.join(random.choices(GIVEN_CHARS, k=name_len))
         name = surname + given
 
-        # 随机手机号，避免重复
+        # 随机手机号避免重复
         while True:
             prefix = random.choice(MOBILE_PREFIXES)
             suffix = ''.join([str(random.randint(0, 9)) for _ in range(11 - len(prefix))])

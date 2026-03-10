@@ -4,7 +4,7 @@
 
 
 def binary_search(arr, target, left, right):
-    """二分查找插入位置"""
+    """二分法查找插入位置"""
     while left <= right:
         mid = left + (right - left) // 2
         if arr[mid] == target:
