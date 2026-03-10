@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>手机号加解密</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+SC:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0f0f12;
+            --surface: #1a1a20;
+            --sidebar-bg: #141418;
+            --border: #2d2d35;
+            --accent: #6366f1;
+            --accent-hover: #818cf8;
+            --text: #e4e4e7;
+            --text-muted: #a1a1aa;
+            --success: #22c55e;
+            --error: #ef4444;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Noto Sans SC', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+        .sidebar-bg { background: var(--sidebar-bg); }
+        .sidebar { width: 240px; min-height: 100vh; border-right: 1px solid var(--border); padding: 1.5rem 0; }
+        .sidebar-title { padding: 0 1.25rem 1rem; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+        .nav-item { display: block; padding: 0.75rem 1.25rem; color: var(--text-muted); text-decoration: none; font-size: 0.95rem; transition: color 0.2s, background 0.2s; border-left: 3px solid transparent; }
+        .nav-item:hover { color: var(--text); background: rgba(99, 102, 241, 0.08); }
+        .nav-item.active { color: var(--accent); background: rgba(99, 102, 241, 0.12); border-left-color: var(--accent); }
+
+        .page-layout { display: flex; min-height: 100vh; }
+        .page-content { flex: 1; padding: 1.5rem 2rem; display: flex; flex-direction: column; background-image: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99, 102, 241, 0.08), transparent); }
+
+        .page-title { font-size: 1.5rem; margin-bottom: 1rem; font-weight: 600; }
+
+        .tool-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            max-width: 720px;
+        }
+
+        .section-title { font-size: 1rem; color: var(--accent); margin-bottom: 1rem; font-weight: 500; }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.5rem; }
+
+        .text-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.95rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+        }
+        .text-input:focus { outline: none; border-color: var(--accent); }
+        .text-input::placeholder { color: var(--text-muted); opacity: 0.7; }
+
+        .form-row { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+        .btn { padding: 0.5rem 1.25rem; font-size: 0.9rem; font-weight: 500; background: var(--accent); color: white; border: none; border-radius: 8px; cursor: pointer; font-family: inherit; }
+        .btn:hover { background: var(--accent-hover); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .output-group { margin-top: 1rem; }
+        .output-label { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.4rem; }
+        .output-value {
+            padding: 0.75rem 1rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--success);
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .output-value.empty { color: var(--text-muted); }
+        .error-msg { font-size: 0.875rem; color: var(--error); margin-top: 0.5rem; }
+    </style>
+</head>
+<body>
+    <div class="page-layout">
+        <aside class="sidebar sidebar-bg">
+            <div class="sidebar-title">导航</div>
+            <a href="/" class="nav-item" data-path="/">家有学霸问题查询</a>
+            <a href="/online-issue-query" class="nav-item" data-path="/online-issue-query">线上问题查询</a>
+            <a href="/binary-sort" class="nav-item" data-path="/binary-sort">二分法排序</a>
+            <a href="/url-encrypt-decrypt" class="nav-item" data-path="/url-encrypt-decrypt">URL 加解密</a>
+            <a href="/timestamp-convert" class="nav-item" data-path="/timestamp-convert">时间戳转换</a>
+            <a href="/json-parse" class="nav-item" data-path="/json-parse">JSON 在线解析</a>
+            <a href="/data-process" class="nav-item" data-path="/data-process">数据处理</a>
+            <a href="/mobile-cipher" class="nav-item active" data-path="/mobile-cipher">手机号加解密</a>
+        </aside>
+        <script>
+            (function() {
+                var path = location.pathname.replace(/\/$/, '') || '/';
+                document.querySelectorAll('.nav-item').forEach(function(a) {
+                    var p = a.getAttribute('data-path');
+                    a.classList.toggle('active', (p === '/' && (path === '/' || path === '/issue-query')) || (p === path));
+                });
+            })();
+        </script>
+        <main class="page-content">
+            <h1 class="page-title">手机号加解密</h1>
+            <div class="tool-card">
+                <div class="section-title">生成连续手机号并加密</div>
+                <p style="font-size:0.875rem;color:var(--text-muted);margin-bottom:1rem;">输入起始手机号和数量 N，生成连续 N 个手机号及 SM4 加密结果</p>
+                <div class="form-group">
+                    <label for="mobile-input">手机号</label>
+                    <input type="text" id="mobile-input" class="text-input" placeholder="13800138201" maxlength="11" />
+                </div>
+                <div class="form-group">
+                    <label for="n-input">数量 N（1-500）</label>
+                    <input type="number" id="n-input" class="text-input" placeholder="3" min="1" max="500" style="max-width:120px;" />
+                </div>
+                <button type="button" class="btn" id="btn-generate">生成并加密</button>
+                <div id="error-msg" class="error-msg" style="display:none;"></div>
+                <div class="output-group">
+                    <div class="output-label">生成的手机号</div>
+                    <pre id="output-mobiles" class="output-value empty">输入手机号和 N 后点击生成</pre>
+                </div>
+                <div class="output-group">
+                    <div class="output-label">加密结果</div>
+                    <pre id="output-encrypted" class="output-value empty">加密后的 Base64 密文</pre>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        (function() {
+            var API_BASE = window.location.origin;
+            var mobileInput = document.getElementById('mobile-input');
+            var nInput = document.getElementById('n-input');
+            var btnGenerate = document.getElementById('btn-generate');
+            var outputMobiles = document.getElementById('output-mobiles');
+            var outputEncrypted = document.getElementById('output-encrypted');
+            var errorMsg = document.getElementById('error-msg');
+
+            function formatJsonArray(arr) {
+                return JSON.stringify(arr, null, 2);
+            }
+
+            btnGenerate.addEventListener('click', function() {
+                errorMsg.style.display = 'none';
+                var mobile = (mobileInput.value || '').trim();
+                var n = parseInt(nInput.value, 10);
+                if (!mobile) {
+                    errorMsg.textContent = '请输入手机号';
+                    errorMsg.style.display = 'block';
+                    return;
+                }
+                if (!/^\d{11}$/.test(mobile)) {
+                    errorMsg.textContent = '请输入有效的11位手机号';
+                    errorMsg.style.display = 'block';
+                    return;
+                }
+                if (!n || n < 1 || n > 500) {
+                    errorMsg.textContent = '请输入有效的 N（1-500）';
+                    errorMsg.style.display = 'block';
+                    return;
+                }
+                btnGenerate.disabled = true;
+                outputMobiles.textContent = '生成中...';
+                outputMobiles.classList.remove('empty');
+                outputEncrypted.textContent = '';
+                outputEncrypted.classList.add('empty');
+
+                fetch(API_BASE + '/api/mobile-cipher?mobile=' + encodeURIComponent(mobile) + '&n=' + n)
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (data.error) {
+                            throw new Error(data.error);
+                        }
+                        outputMobiles.textContent = formatJsonArray(data.mobiles || []);
+                        outputMobiles.classList.remove('empty');
+                        outputEncrypted.textContent = formatJsonArray(data.encrypted || []);
+                        outputEncrypted.classList.remove('empty');
+                    })
+                    .catch(function(e) {
+                        errorMsg.textContent = '请求失败: ' + e.message;
+                        errorMsg.style.display = 'block';
+                        outputMobiles.textContent = '';
+                        outputMobiles.classList.add('empty');
+                        outputEncrypted.textContent = '';
+                        outputEncrypted.classList.add('empty');
+                    })
+                    .finally(function() {
+                        btnGenerate.disabled = false;
+                    });
+            });
+        })();
+    </script>
+</body>
+</html>

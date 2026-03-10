@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>时间戳转换</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+SC:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0f0f12;
+            --surface: #1a1a20;
+            --sidebar-bg: #141418;
+            --border: #2d2d35;
+            --accent: #6366f1;
+            --accent-hover: #818cf8;
+            --text: #e4e4e7;
+            --text-muted: #a1a1aa;
+            --success: #22c55e;
+            --error: #ef4444;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Noto Sans SC', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+        .sidebar-bg { background: var(--sidebar-bg); }
+        .sidebar { width: 240px; min-height: 100vh; border-right: 1px solid var(--border); padding: 1.5rem 0; }
+        .sidebar-title { padding: 0 1.25rem 1rem; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+        .nav-item { display: block; padding: 0.75rem 1.25rem; color: var(--text-muted); text-decoration: none; font-size: 0.95rem; transition: color 0.2s, background 0.2s; border-left: 3px solid transparent; }
+        .nav-item:hover { color: var(--text); background: rgba(99, 102, 241, 0.08); }
+        .nav-item.active { color: var(--accent); background: rgba(99, 102, 241, 0.12); border-left-color: var(--accent); }
+
+        .page-layout { display: flex; min-height: 100vh; }
+        .page-content { flex: 1; padding: 2rem 2.5rem; background-image: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99, 102, 241, 0.08), transparent); }
+
+        .page-title { font-size: 1.5rem; margin-bottom: 1.5rem; font-weight: 600; }
+
+        .tool-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            max-width: 640px;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-title { font-size: 1rem; color: var(--accent); margin-bottom: 1rem; font-weight: 500; }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.5rem; }
+
+        .text-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.95rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+        }
+        .text-input:focus { outline: none; border-color: var(--accent); }
+        .text-input::placeholder { color: var(--text-muted); opacity: 0.7; }
+
+        .form-row { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+        .radio-group { display: flex; gap: 1rem; align-items: center; }
+        .radio-group label { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.875rem; color: var(--text); margin: 0; cursor: pointer; }
+        .radio-group input { cursor: pointer; }
+
+        .btn { padding: 0.5rem 1.25rem; font-size: 0.9rem; font-weight: 500; background: var(--accent); color: white; border: none; border-radius: 8px; cursor: pointer; font-family: inherit; }
+        .btn:hover { background: var(--accent-hover); }
+
+        .output-wrap { margin-top: 1rem; }
+        .output-label { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem; }
+        .output-value {
+            padding: 1rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            color: var(--success);
+            word-break: break-all;
+        }
+        .output-value.empty { color: var(--text-muted); }
+        .error-msg { font-size: 0.875rem; color: var(--error); margin-top: 0.5rem; }
+    </style>
+</head>
+<body>
+    <div class="page-layout">
+        <aside class="sidebar sidebar-bg">
+            <div class="sidebar-title">导航</div>
+            <a href="/" class="nav-item" data-path="/">家有学霸问题查询</a>
+            <a href="/online-issue-query" class="nav-item" data-path="/online-issue-query">线上问题查询</a>
+            <a href="/binary-sort" class="nav-item" data-path="/binary-sort">二分法排序</a>
+            <a href="/url-encrypt-decrypt" class="nav-item" data-path="/url-encrypt-decrypt">URL 加解密</a>
+            <a href="/timestamp-convert" class="nav-item active" data-path="/timestamp-convert">时间戳转换</a>
+            <a href="/json-parse" class="nav-item" data-path="/json-parse">JSON 在线解析</a>
+            <a href="/data-process" class="nav-item" data-path="/data-process">数据处理</a>
+            <a href="/mobile-cipher" class="nav-item" data-path="/mobile-cipher">手机号加解密</a>
+        </aside>
+        <script>
+            (function() {
+                var path = location.pathname.replace(/\/$/, '') || '/';
+                document.querySelectorAll('.nav-item').forEach(function(a) {
+                    var p = a.getAttribute('data-path');
+                    a.classList.toggle('active', (p === '/' && (path === '/' || path === '/issue-query')) || (p === path));
+                });
+            })();
+        </script>
+        <main class="page-content">
+            <h1 class="page-title">时间戳转换</h1>
+
+            <div class="tool-card">
+                <div class="section-title">时间戳转日期时间</div>
+                <div class="form-group">
+                    <label for="ts-input">输入时间戳</label>
+                    <input type="text" id="ts-input" class="text-input" placeholder="例如：1741585389 或 1741585389000" />
+                </div>
+                <div class="form-group">
+                    <label>单位</label>
+                    <div class="radio-group">
+                        <label><input type="radio" name="ts-unit" value="sec" checked /> 秒</label>
+                        <label><input type="radio" name="ts-unit" value="ms" /> 毫秒</label>
+                    </div>
+                </div>
+                <button type="button" class="btn" id="btn-ts-to-date">转换</button>
+                <div class="output-wrap">
+                    <div class="output-label">输出</div>
+                    <div id="output-ts2date" class="output-value empty">点击转换后显示结果</div>
+                    <div id="error-ts2date" class="error-msg" style="display:none;"></div>
+                </div>
+            </div>
+
+            <div class="tool-card">
+                <div class="section-title">日期时间转时间戳</div>
+                <div class="form-group">
+                    <label for="date-input">输入日期时间</label>
+                    <input type="text" id="date-input" class="text-input" placeholder="例如：2026-03-10 14:23:09" />
+                </div>
+                <div class="form-group">
+                    <label>输出单位</label>
+                    <div class="radio-group">
+                        <label><input type="radio" name="date-unit" value="sec" checked /> 秒</label>
+                        <label><input type="radio" name="date-unit" value="ms" /> 毫秒</label>
+                    </div>
+                </div>
+                <button type="button" class="btn" id="btn-date-to-ts">转换</button>
+                <div class="output-wrap">
+                    <div class="output-label">输出</div>
+                    <div id="output-date2ts" class="output-value empty">点击转换后显示结果</div>
+                    <div id="error-date2ts" class="error-msg" style="display:none;"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        (function() {
+            function formatDateTime(d) {
+                var y = d.getFullYear();
+                var m = d.getMonth();
+                var day = d.getDate();
+                var h = d.getHours();
+                var min = d.getMinutes();
+                var sec = d.getSeconds();
+                return y + '-' + String(m + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0') + ' ' +
+                    String(h).padStart(2, '0') + ':' + String(min).padStart(2, '0') + ':' + String(sec).padStart(2, '0');
+            }
+
+            function parseDateTime(str) {
+                var s = str.trim().replace(/\s+/g, ' ');
+                var d = new Date(s.replace(' ', 'T'));
+                if (isNaN(d.getTime())) {
+                    return null;
+                }
+                return d;
+            }
+
+            document.getElementById('btn-ts-to-date').addEventListener('click', function() {
+                var val = document.getElementById('ts-input').value.trim();
+                var unit = document.querySelector('input[name="ts-unit"]:checked').value;
+                var output = document.getElementById('output-ts2date');
+                var err = document.getElementById('error-ts2date');
+
+                err.style.display = 'none';
+                if (!val) {
+                    err.textContent = '请输入时间戳';
+                    err.style.display = 'block';
+                    output.classList.add('empty');
+                    return;
+                }
+                var ts = parseInt(val, 10);
+                if (isNaN(ts)) {
+                    err.textContent = '请输入有效数字';
+                    err.style.display = 'block';
+                    output.classList.add('empty');
+                    return;
+                }
+                var ms = unit === 'ms' ? ts : ts * 1000;
+                var d = new Date(ms);
+                if (isNaN(d.getTime())) {
+                    err.textContent = '时间戳超出有效范围';
+                    err.style.display = 'block';
+                    output.classList.add('empty');
+                    return;
+                }
+                output.textContent = formatDateTime(d);
+                output.classList.remove('empty');
+            });
+
+            document.getElementById('btn-date-to-ts').addEventListener('click', function() {
+                var val = document.getElementById('date-input').value.trim();
+                var unit = document.querySelector('input[name="date-unit"]:checked').value;
+                var output = document.getElementById('output-date2ts');
+                var err = document.getElementById('error-date2ts');
+
+                err.style.display = 'none';
+                if (!val) {
+                    err.textContent = '请输入日期时间';
+                    err.style.display = 'block';
+                    output.classList.add('empty');
+                    return;
+                }
+                var d = parseDateTime(val);
+                if (!d) {
+                    err.textContent = '日期格式无效，请使用 2026-03-10 14:23:09 格式';
+                    err.style.display = 'block';
+                    output.classList.add('empty');
+                    return;
+                }
+                var ts = unit === 'ms' ? d.getTime() : Math.floor(d.getTime() / 1000);
+                output.textContent = String(ts);
+                output.classList.remove('empty');
+            });
+        })();
+    </script>
+</body>
+</html>

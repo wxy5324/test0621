@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON 在线解析</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+SC:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0f0f12;
+            --surface: #1a1a20;
+            --sidebar-bg: #141418;
+            --border: #2d2d35;
+            --accent: #6366f1;
+            --accent-hover: #818cf8;
+            --text: #e4e4e7;
+            --text-muted: #a1a1aa;
+            --success: #22c55e;
+            --error: #ef4444;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Noto Sans SC', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+        .sidebar-bg { background: var(--sidebar-bg); }
+        .sidebar { width: 240px; min-height: 100vh; border-right: 1px solid var(--border); padding: 1.5rem 0; }
+        .sidebar-title { padding: 0 1.25rem 1rem; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+        .nav-item { display: block; padding: 0.75rem 1.25rem; color: var(--text-muted); text-decoration: none; font-size: 0.95rem; transition: color 0.2s, background 0.2s; border-left: 3px solid transparent; }
+        .nav-item:hover { color: var(--text); background: rgba(99, 102, 241, 0.08); }
+        .nav-item.active { color: var(--accent); background: rgba(99, 102, 241, 0.12); border-left-color: var(--accent); }
+
+        .page-layout { display: flex; min-height: 100vh; }
+        .page-content { flex: 1; padding: 1.5rem 2rem; display: flex; flex-direction: column; background-image: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99, 102, 241, 0.08), transparent); }
+
+        .page-title { font-size: 1.5rem; margin-bottom: 1rem; font-weight: 600; }
+
+        .json-panels {
+            display: flex;
+            gap: 1rem;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .json-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .panel-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .json-textarea, .json-output {
+            flex: 1;
+            min-height: 320px;
+            padding: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            resize: none;
+        }
+
+        .json-textarea:focus { outline: none; border-color: var(--accent); }
+        .json-textarea::placeholder { color: var(--text-muted); opacity: 0.7; }
+
+        .json-output {
+            color: var(--success);
+            overflow: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .json-output.error { color: var(--error); }
+        .json-output.empty { color: var(--text-muted); }
+
+        @media (max-width: 768px) {
+            .json-panels { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="page-layout">
+        <aside class="sidebar sidebar-bg">
+            <div class="sidebar-title">导航</div>
+            <a href="/" class="nav-item" data-path="/">家有学霸问题查询</a>
+            <a href="/online-issue-query" class="nav-item" data-path="/online-issue-query">线上问题查询</a>
+            <a href="/binary-sort" class="nav-item" data-path="/binary-sort">二分法排序</a>
+            <a href="/url-encrypt-decrypt" class="nav-item" data-path="/url-encrypt-decrypt">URL 加解密</a>
+            <a href="/timestamp-convert" class="nav-item" data-path="/timestamp-convert">时间戳转换</a>
+            <a href="/json-parse" class="nav-item active" data-path="/json-parse">JSON 在线解析</a>
+            <a href="/data-process" class="nav-item" data-path="/data-process">数据处理</a>
+            <a href="/mobile-cipher" class="nav-item" data-path="/mobile-cipher">手机号加解密</a>
+        </aside>
+        <script>
+            (function() {
+                var path = location.pathname.replace(/\/$/, '') || '/';
+                document.querySelectorAll('.nav-item').forEach(function(a) {
+                    var p = a.getAttribute('data-path');
+                    a.classList.toggle('active', (p === '/' && (path === '/' || path === '/issue-query')) || (p === path));
+                });
+            })();
+        </script>
+        <main class="page-content">
+            <h1 class="page-title">JSON 在线解析</h1>
+            <div class="json-panels">
+                <div class="json-panel">
+                    <div class="panel-label">输入 JSON</div>
+                    <textarea id="json-input" class="json-textarea" placeholder='{"key": "value", "items": [1, 2, 3]}'></textarea>
+                </div>
+                <div class="json-panel">
+                    <div class="panel-label">格式化结果</div>
+                    <pre id="json-output" class="json-output empty">在左侧输入 JSON 后自动显示格式化结果</pre>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        (function() {
+            var input = document.getElementById('json-input');
+            var output = document.getElementById('json-output');
+            var timer = null;
+
+            function formatJson() {
+                var val = input.value.trim();
+                if (!val) {
+                    output.textContent = '在左侧输入 JSON 后自动显示格式化结果';
+                    output.className = 'json-output empty';
+                    return;
+                }
+                try {
+                    var obj = JSON.parse(val);
+                    output.textContent = JSON.stringify(obj, null, 2);
+                    output.className = 'json-output';
+                } catch (e) {
+                    output.textContent = 'JSON 格式错误: ' + e.message;
+                    output.className = 'json-output error';
+                }
+            }
+
+            function debounceFormat() {
+                if (timer) clearTimeout(timer);
+                timer = setTimeout(formatJson, 200);
+            }
+
+            input.addEventListener('input', debounceFormat);
+            input.addEventListener('paste', debounceFormat);
+            input.addEventListener('change', formatJson);
+        })();
+    </script>
+</body>
+</html>
