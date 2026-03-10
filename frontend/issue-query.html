@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>家有学霸问题查询</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+SC:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg:#0f0f12; --surface:#1a1a20; --sidebar-bg:#141418; --border:#2d2d35; --accent:#6366f1; --text:#e4e4e7; --text-muted:#a1a1aa; --success:#22c55e; --error:#ef4444; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Noto Sans SC', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+        .sidebar-bg { background: var(--sidebar-bg); }
+        .sidebar { width: 240px; min-height: 100vh; border-right: 1px solid var(--border); padding: 1.5rem 0; }
+        .sidebar-title { padding: 0 1.25rem 1rem; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+        .nav-item { display: block; padding: 0.75rem 1.25rem; color: var(--text-muted); text-decoration: none; font-size: 0.95rem; transition: color 0.2s, background 0.2s; border-left: 3px solid transparent; }
+        .nav-item:hover { color: var(--text); background: rgba(99, 102, 241, 0.08); }
+        .nav-item.active { color: var(--accent); background: rgba(99, 102, 241, 0.12); border-left-color: var(--accent); }
+        .page-layout { display: flex; min-height: 100vh; }
+        .page-content { flex: 1; padding: 1.5rem 2rem; overflow-x: auto; background-image: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99, 102, 241, 0.08), transparent); }
+        .page-title { font-size: 1.5rem; margin-bottom: 1rem; }
+        .query-bar { display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; }
+        .query-bar label { font-size: 0.875rem; color: var(--text-muted); display: block; margin-bottom: 0.25rem; }
+        .query-bar .date-wrap { position: relative; }
+        .query-bar .date-input { padding: 0.5rem 0.75rem; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 0.9rem; width: 140px; cursor: pointer; color-scheme: dark; }
+        .query-bar .date-input::-webkit-calendar-picker-indicator { cursor: pointer; opacity: 0.7; }
+        .query-bar .btn-query { padding: 0.5rem 1.25rem; background: var(--accent); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem; }
+        .query-bar .btn-query:hover { background: #818cf8; }
+        .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-top: 1rem; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+        th, td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: rgba(99, 102, 241, 0.15); font-weight: 600; color: var(--accent); }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: rgba(99, 102, 241, 0.04); }
+        .loading { color: var(--text-muted); padding: 2rem; text-align: center; }
+        .error { color: var(--error); padding: 1rem; }
+        .empty { color: var(--text-muted); padding: 2rem; text-align: center; }
+        .summary-bar { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.75rem; }
+        .summary-bar span { margin-right: 1.5rem; }
+    </style>
+</head>
+<body>
+    <div class="page-layout">
+        <aside class="sidebar sidebar-bg">
+            <div class="sidebar-title">导航</div>
+            <a href="/" class="nav-item active" data-path="/">家有学霸问题查询</a>
+            <a href="/online-issue-query" class="nav-item" data-path="/online-issue-query">线上问题查询</a>
+            <a href="/binary-sort" class="nav-item" data-path="/binary-sort">二分法排序</a>
+        </aside>
+        <script>
+            (function() {
+                var path = location.pathname.replace(/\/$/, '') || '/';
+                document.querySelectorAll('.nav-item').forEach(function(a) {
+                    var p = a.getAttribute('data-path');
+                    a.classList.toggle('active', (p === '/' && (path === '/' || path === '/issue-query')) || (p === path) || (p === '/online-issue-query' && path === '/online-issue-query'));
+                });
+            })();
+        </script>
+        <main class="page-content">
+            <h1 class="page-title">家有学霸问题查询</h1>
+            <div class="query-bar">
+                <span class="date-wrap"><label for="start-date">开始日期</label><input type="date" class="date-input" id="start-date" /></span>
+                <span class="date-wrap"><label for="end-date">结束日期</label><input type="date" class="date-input" id="end-date" /></span>
+                <button type="button" class="btn-query" id="btn-query">查询</button>
+            </div>
+            <div id="status" class="loading">请选择日期范围后点击查询</div>
+            <div id="summary-bar" class="summary-bar" style="display:none;"></div>
+            <div class="table-wrap" id="table-wrap" style="display:none;">
+                <table>
+                    <thead id="thead"></thead>
+                    <tbody id="tbody"></tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+    <script>
+        function doQuery() {
+            var startDate = document.getElementById('start-date').value;
+            var endDate = document.getElementById('end-date').value;
+            if (!startDate || !endDate) {
+                document.getElementById('status').textContent = '请选择开始日期和结束日期';
+                document.getElementById('status').className = 'error';
+                document.getElementById('status').style.display = 'block';
+                document.getElementById('table-wrap').style.display = 'none';
+                return;
+            }
+            if (startDate > endDate) {
+                document.getElementById('status').textContent = '开始日期不能晚于结束日期';
+                document.getElementById('status').className = 'error';
+                document.getElementById('status').style.display = 'block';
+                document.getElementById('table-wrap').style.display = 'none';
+                return;
+            }
+            var url = '/api/issues?start_date=' + encodeURIComponent(startDate) + '&end_date=' + encodeURIComponent(endDate);
+            document.getElementById('status').textContent = '加载中...';
+            document.getElementById('status').className = 'loading';
+            document.getElementById('status').style.display = 'block';
+            document.getElementById('table-wrap').style.display = 'none';
+            document.getElementById('summary-bar').style.display = 'none';
+            document.getElementById('tbody').innerHTML = '';
+            document.getElementById('thead').innerHTML = '';
+            fetch(url)
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    var status = document.getElementById('status');
+                    var wrap = document.getElementById('table-wrap');
+                    var thead = document.getElementById('thead');
+                    var tbody = document.getElementById('tbody');
+                    if (data.error) {
+                        status.textContent = data.error;
+                        status.className = 'error';
+                        status.style.display = 'block';
+                        return;
+                    }
+                    var rows = data.rows || [];
+                    var cols = data.columns || [];
+                    if (rows.length === 0) {
+                        status.textContent = '暂无数据';
+                        status.className = 'empty';
+                        status.style.display = 'block';
+                        document.getElementById('summary-bar').style.display = 'none';
+                        return;
+                    }
+                    var M = rows.length;
+                    var N = rows.filter(function(r) { var s = (r['状态'] || '').trim(); return s === 'Closed' || s === 'Resolved'; }).length;
+                    var X = M - N;
+                    document.getElementById('summary-bar').textContent = '新增问题 ' + M + ' 个，已解决 ' + N + ' 个，待解决 ' + X + ' 个';
+                    document.getElementById('summary-bar').style.display = 'block';
+                    status.style.display = 'none';
+                    wrap.style.display = 'block';
+                    var tr = document.createElement('tr');
+                    cols.forEach(function(c) { var th = document.createElement('th'); th.textContent = c; tr.appendChild(th); });
+                    thead.appendChild(tr);
+                    rows.forEach(function(row) {
+                        var tr = document.createElement('tr');
+                        cols.forEach(function(col) { var td = document.createElement('td'); td.textContent = row[col] == null ? '' : row[col]; tr.appendChild(td); });
+                        tbody.appendChild(tr);
+                    });
+                })
+                .catch(function(e) {
+                    document.getElementById('status').textContent = '加载失败: ' + e.message;
+                    document.getElementById('status').className = 'error';
+                    document.getElementById('status').style.display = 'block';
+                });
+        }
+        document.getElementById('btn-query').addEventListener('click', doQuery);
+    </script>
+</body>
+</html>

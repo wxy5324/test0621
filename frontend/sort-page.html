@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>二分插入排序</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+SC:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0f0f12;
+            --surface: #1a1a20;
+            --border: #2d2d35;
+            --accent: #6366f1;
+            --accent-hover: #818cf8;
+            --text: #e4e4e7;
+            --text-muted: #a1a1aa;
+            --success: #22c55e;
+            --error: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        h1 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            margin-bottom: 2rem;
+            letter-spacing: -0.02em;
+        }
+
+        .container {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            width: 100%;
+            max-width: 420px;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            transition: border-color 0.2s;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        input[type="number"]::placeholder {
+            color: var(--text-muted);
+            opacity: 0.7;
+        }
+
+        .inputs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .inputs-grid input {
+            min-width: 0;
+        }
+
+        .inputs-section {
+            display: none;
+            margin-top: 1rem;
+        }
+
+        .inputs-section.visible {
+            display: block;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 0.875rem 1.5rem;
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 500;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+            margin-top: 1rem;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .result {
+            margin-top: 1.5rem;
+            padding: 1rem 1.25rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            display: none;
+        }
+
+        .result.visible {
+            display: block;
+        }
+
+        .result-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            font-family: inherit;
+        }
+
+        .result-value {
+            color: var(--success);
+            word-break: break-all;
+        }
+
+        .error-msg {
+            font-size: 0.875rem;
+            color: var(--error);
+            margin-top: 0.5rem;
+            display: none;
+        }
+
+        .error-msg.visible {
+            display: block;
+        }
+
+        .btn-next {
+            background: var(--border);
+            color: var(--text);
+            margin-top: 0.75rem;
+            padding: 0.6rem 1rem;
+            font-size: 0.9rem;
+        }
+
+        .btn-next:hover {
+            background: #3d3d47;
+        }
+
+        .reset-link {
+            font-size: 0.8rem;
+            color: var(--accent);
+            cursor: pointer;
+            margin-top: 0.5rem;
+            text-decoration: none;
+        }
+
+        .reset-link:hover {
+            text-decoration: underline;
+        }
+        .sidebar-bg { background: #141418; }
+        .sidebar { width: 240px; min-height: 100vh; border-right: 1px solid var(--border); padding: 1.5rem 0; }
+        .sidebar-title { padding: 0 1.25rem 1rem; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+        .nav-item { display: block; padding: 0.75rem 1.25rem; color: var(--text-muted); text-decoration: none; font-size: 0.95rem; transition: color 0.2s, background 0.2s; }
+        .nav-item:hover { color: var(--text); background: rgba(99, 102, 241, 0.08); }
+        .nav-item { border-left: 3px solid transparent; }
+        .nav-item.active { color: var(--accent); background: rgba(99, 102, 241, 0.12); border-left-color: var(--accent); }
+        .page-layout { display: flex; min-height: 100vh; }
+        .page-content { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 3rem 1.5rem; background-image: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99, 102, 241, 0.15), transparent); }
+    </style>
+</head>
+<body>
+    <div class="page-layout">
+        <aside class="sidebar sidebar-bg">
+            <div class="sidebar-title">导航</div>
+            <a href="/" class="nav-item" data-path="/">家有学霸问题查询</a>
+            <a href="/online-issue-query" class="nav-item" data-path="/online-issue-query">线上问题查询</a>
+            <a href="/binary-sort" class="nav-item active" data-path="/binary-sort">二分法排序</a>
+        </aside>
+        <script>
+            (function() {
+                var path = location.pathname.replace(/\/$/, '') || '/';
+                document.querySelectorAll('.nav-item').forEach(function(a) {
+                    var p = a.getAttribute('data-path');
+                    a.classList.toggle('active', (p === '/' && (path === '/' || path === '/issue-query')) || (p === path));
+                });
+            })();
+        </script>
+        <main class="page-content">
+    <h1>二分插入排序</h1>
+    <div class="container">
+        <div class="form-group">
+            <label for="n-input">输入 N（待排序数字个数）</label>
+            <input type="number" id="n-input" min="1" max="50" placeholder="例如：5" />
+            <button type="button" class="btn btn-next" id="btn-next">下一步</button>
+        </div>
+
+        <div class="inputs-section" id="inputs-section">
+            <div class="form-group">
+                <label id="n-label">请输入 N 个数字</label>
+                <div class="inputs-grid" id="inputs-grid"></div>
+            </div>
+            <a class="reset-link" id="reset-link">← 修改 N</a>
+        </div>
+
+        <button type="button" class="btn btn-primary" id="btn-confirm" disabled>确认排序</button>
+
+        <div class="error-msg" id="error-msg"></div>
+
+        <div class="result" id="result">
+            <div class="result-label">排序结果</div>
+            <div class="result-value" id="result-value"></div>
+        </div>
+    </div>
+        </main>
+    </div>
+
+    <script>
+        // 与 Java 实现完全一致的二分插入排序算法
+        function binarySearch(arr, target, left, right) {
+            while (left <= right) {
+                const mid = left + Math.floor((right - left) / 2);
+                if (arr[mid] === target) {
+                    return mid;
+                } else if (arr[mid] < target) {
+                    left = mid + 1;
+                } else {
+                    right = mid - 1;
+                }
+            }
+            return left;
+        }
+
+        function binaryInsertionSort(arr) {
+            const result = [...arr];
+            for (let i = 1; i < result.length; i++) {
+                const key = result[i];
+                const pos = binarySearch(result, key, 0, i - 1);
+                for (let j = i; j > pos; j--) {
+                    result[j] = result[j - 1];
+                }
+                result[pos] = key;
+            }
+            return result;
+        }
+
+        const nInput = document.getElementById('n-input');
+        const btnNext = document.getElementById('btn-next');
+        const inputsSection = document.getElementById('inputs-section');
+        const inputsGrid = document.getElementById('inputs-grid');
+        const nLabel = document.getElementById('n-label');
+        const btnConfirm = document.getElementById('btn-confirm');
+        const errorMsg = document.getElementById('error-msg');
+        const resultEl = document.getElementById('result');
+        const resultValue = document.getElementById('result-value');
+        const resetLink = document.getElementById('reset-link');
+
+        function resetToStep1() {
+            nInput.value = '';
+            nInput.disabled = false;
+            btnNext.style.display = 'block';
+            inputsSection.classList.remove('visible');
+            inputsGrid.innerHTML = '';
+            btnConfirm.disabled = true;
+            resultEl.classList.remove('visible');
+            hideError();
+        }
+
+        function hideError() {
+            errorMsg.classList.remove('visible');
+            errorMsg.textContent = '';
+        }
+
+        function showError(msg) {
+            errorMsg.textContent = msg;
+            errorMsg.classList.add('visible');
+        }
+
+        function createNumberInputs(n) {
+            inputsGrid.innerHTML = '';
+            for (let i = 0; i < n; i++) {
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.placeholder = `数字 ${i + 1}`;
+                input.dataset.index = i;
+                input.addEventListener('input', validateAndUpdateConfirm);
+                inputsGrid.appendChild(input);
+            }
+        }
+
+        function validateAndUpdateConfirm() {
+            hideError();
+            resultEl.classList.remove('visible');
+            const n = parseInt(nInput.value, 10);
+            if (!n || n < 1 || n > 50) {
+                btnConfirm.disabled = true;
+                return;
+            }
+            const inputs = inputsGrid.querySelectorAll('input');
+            let allFilled = inputs.length === n;
+            for (const inp of inputs) {
+                if (inp.value === '' || inp.value === null) {
+                    allFilled = false;
+                    break;
+                }
+            }
+            btnConfirm.disabled = !allFilled;
+        }
+
+        btnNext.addEventListener('click', () => {
+            hideError();
+            resultEl.classList.remove('visible');
+            const n = parseInt(nInput.value, 10);
+            if (!n || n < 1) {
+                showError('请输入有效的 N（1–50）');
+                return;
+            }
+            if (n > 50) {
+                showError('N 不能超过 50');
+                return;
+            }
+            nLabel.textContent = `请输入 ${n} 个待排序数字`;
+            createNumberInputs(n);
+            inputsSection.classList.add('visible');
+            btnConfirm.disabled = true;
+            nInput.disabled = true;
+            btnNext.style.display = 'none';
+        });
+
+        nInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                btnNext.click();
+            }
+        });
+
+        async function doSort(values) {
+            // 始终尝试请求 Python 服务器 (端口 3000)，确保终端有输出
+            const SORT_URL = 'http://localhost:3000/sort';
+            try {
+                const res = await fetch(SORT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ numbers: values })
+                });
+                const data = await res.json();
+                return data.sorted;
+            } catch (e) {
+                console.warn('服务器未响应，使用本地排序。请运行: python server.py', e);
+                return binaryInsertionSort(values);
+            }
+        }
+
+        btnConfirm.addEventListener('click', async () => {
+            hideError();
+            const n = parseInt(nInput.value, 10);
+            const inputs = inputsGrid.querySelectorAll('input');
+            const values = [];
+            let hasError = false;
+            for (const inp of inputs) {
+                const val = inp.value.trim();
+                if (val === '') {
+                    showError('请填写所有数字');
+                    hasError = true;
+                    break;
+                }
+                const num = parseFloat(val);
+                if (isNaN(num)) {
+                    showError('请输入有效数字');
+                    hasError = true;
+                    break;
+                }
+                values.push(num);
+            }
+            if (hasError) return;
+
+            const sorted = await doSort(values);
+            resultValue.textContent = '[' + sorted.join(', ') + ']';
+            resultEl.classList.add('visible');
+        });
+
+        resetLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            resetToStep1();
+        });
+    </script>
+</body>
+</html>
