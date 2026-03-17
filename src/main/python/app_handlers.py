@@ -1,10 +1,13 @@
 """
 HTTP 请求处理 - 路由与业务调用
 """
+import csv
+import io
 import json
 import os
 import threading
 import urllib.parse
+import base64
 from http.server import BaseHTTPRequestHandler
 
 # 业务模块导入（带降级）
@@ -35,6 +38,14 @@ except ImportError:
     def generate_and_encrypt_mobiles(mobile, n):
         return {'error': '手机号加解密模块未找到，请确认 src/main/python/mobile_cipher.py 存在'}
 
+try:
+    from export_csv import generate_test_cases_with_llm, export_rows_to_xlsx_bytes
+except ImportError:
+    def generate_test_cases_with_llm(requirement):
+        return {'error': '测试用例导出模块未找到，请确认 src/main/python/export_csv.py 存在'}
+
+    def export_rows_to_xlsx_bytes(rows):
+        return {'error': '导出模块未找到'}
 
 def create_handler(html_contents: dict):
     """
@@ -64,7 +75,36 @@ def create_handler(html_contents: dict):
             self.end_headers()
 
         def do_POST(self):
-            if self.path == '/sort':
+            path = self.path.split('?')[0]
+            if path == '/api/export-test-cases':
+                content_length = int(self.headers.get('Content-Length', 0))
+                body = self.rfile.read(content_length)
+                try:
+                    data = json.loads(body.decode('utf-8'))
+                    requirement = (data.get('requirement') or '').strip()
+                    if not requirement:
+                        self._json_response({'error': '需求描述不能为空'})
+                        return
+                    rows = generate_test_cases_with_llm(requirement)
+                    if isinstance(rows, dict) and 'error' in rows:
+                        self._json_response(rows)
+                        return
+                    xlsx_bytes = export_rows_to_xlsx_bytes(rows)
+                    self._json_response({
+                        'xlsx': base64.b64encode(xlsx_bytes).decode('ascii'),
+                        'filename': '功能测试用例.xlsx'
+                    })
+                except ImportError as e:
+                    if 'openpyxl' in str(e):
+                        self._json_response({'error': '导出失败: 缺少 openpyxl 模块，请运行 pip install openpyxl 安装后重启服务器'})
+                    else:
+                        self._json_response({'error': f'导出失败: {e}'})
+                except RuntimeError as e:
+                    self._json_response({'error': str(e)})
+                except Exception as e:
+                    self._json_response({'error': f'导出失败: {e}'})
+                return
+            if path == '/sort':
                 content_length = int(self.headers.get('Content-Length', 0))
                 body = self.rfile.read(content_length)
                 try:

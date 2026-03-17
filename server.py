@@ -25,6 +25,7 @@ HTML_FILES = [
     ('json-parse.html', 'JSON 在线解析'),
     ('data-process.html', '数据处理'),
     ('mobile-cipher.html', '手机号加解密'),
+    ('test-cases.html', '测试用例'),
 ]
 
 
@@ -60,6 +61,8 @@ def load_html_contents():
     contents['/data-process/'] = raw['data-process.html']
     contents['/mobile-cipher'] = raw['mobile-cipher.html']
     contents['/mobile-cipher/'] = raw['mobile-cipher.html']
+    contents['/test-cases'] = raw['test-cases.html']
+    contents['/test-cases/'] = raw['test-cases.html']
 
     return contents
 
@@ -75,10 +78,33 @@ def main():
         print(f'[目录] {FRONTEND_DIR}')
         sys.exit(1)
 
+    try:
+        import openpyxl  # noqa: F401
+    except ImportError:
+        py_path = sys.executable
+        print('[提示] 当前 Python 未安装 openpyxl，正在尝试自动安装...')
+        import subprocess
+        try:
+            r = subprocess.run(
+                [py_path, '-m', 'pip', 'install', 'openpyxl', '-q'],
+                capture_output=True,
+                text=True,
+                timeout=120,
+                cwd=SCRIPT_DIR,
+            )
+            if r.returncode == 0:
+                print('[OK] openpyxl 安装成功')
+            else:
+                raise RuntimeError(r.stderr or r.stdout or '安装失败')
+        except Exception as e:
+            print('[失败] 自动安装失败，请手动执行:')
+            print(f'       "{py_path}" -m pip install openpyxl')
+            print(f'       错误: {e}')
+
     handler = create_handler(html_contents)
-    server = HTTPServer(('localhost', PORT), handler)
+    server = HTTPServer(('127.0.0.1', PORT), handler)
     print(f'\n  系统已启动')
-    print(f'  在浏览器打开: http://localhost:{PORT}')
+    print(f'  在浏览器打开: http://127.0.0.1:{PORT} 或 http://localhost:{PORT}')
     print(f'  按 Ctrl+C 停止服务器\n')
 
     try:
